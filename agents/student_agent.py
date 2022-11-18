@@ -22,9 +22,7 @@ class StudentAgent(Agent):
             "d": 2,
             "l": 3,
         }
-
-    
-                
+       
     def step(self, chess_board, my_pos, adv_pos, max_step):
         """
         Implement the step function of your agent here.
@@ -40,11 +38,5 @@ class StudentAgent(Agent):
 
         Please check the sample implementation in agents/random_agent.py or agents/human_agent.py for more details.
         """
-     
 
         return my_pos, self.dir_map["u"]
-
-   
-
-
-
