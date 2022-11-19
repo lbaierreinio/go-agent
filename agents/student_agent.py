@@ -3,7 +3,7 @@ from agents.agent import Agent
 from store import register_agent
 from agents.mcts_node import MCTSNode
 import sys
-
+from copy import deepcopy
 
 @register_agent("student_agent")
 class StudentAgent(Agent):
@@ -22,7 +22,9 @@ class StudentAgent(Agent):
             "d": 2,
             "l": 3,
         }
-       
+
+    
+                
     def step(self, chess_board, my_pos, adv_pos, max_step):
         """
         Implement the step function of your agent here.
@@ -38,5 +40,18 @@ class StudentAgent(Agent):
 
         Please check the sample implementation in agents/random_agent.py or agents/human_agent.py for more details.
         """
+        # dummy return
+        child = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
+        child.run_simulation()
+        
+            
 
+       
+
+        
         return my_pos, self.dir_map["u"]
+
+   
+
+
+
