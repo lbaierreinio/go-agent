@@ -2,8 +2,7 @@
 from agents.agent import Agent
 from store import register_agent
 from agents.mcts_node import MCTSNode
-import sys
-
+from copy import deepcopy
 
 @register_agent("student_agent")
 class StudentAgent(Agent):
@@ -22,7 +21,18 @@ class StudentAgent(Agent):
             "d": 2,
             "l": 3,
         }
-       
+        self.root = None
+
+    def compare(self, board_one, board_two):
+        length = len(board_one)
+        for i in range(0,length):
+            for j in range(0,length):
+                for k in range(0,4):
+                    if (board_one[i][j][k] != board_two[i][j][k]):
+                        return False
+
+        return True
+                
     def step(self, chess_board, my_pos, adv_pos, max_step):
         """
         Implement the step function of your agent here.
@@ -38,5 +48,43 @@ class StudentAgent(Agent):
 
         Please check the sample implementation in agents/random_agent.py or agents/human_agent.py for more details.
         """
+        # if no root instantiated yet 
+        if (self.root == None):
+            self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
+            self.root.build_tree(1)
+            self.root = self.root.find_best_child()
+            return self.root.get_move()
+        
+        # if root instantiated, use tree structure to find children representing new game state
+        else: 
+            found = False
+            for child in self.root.children: # get child that represents new game state
+                if (adv_pos == child.adv_pos and my_pos == child.my_pos and self.compare(chess_board, child.chess_board)):
+                    self.root = child
+                    self.root.parent = None
+                    found = True
+                    break
+            # if not found, create new root
+            if (not found):
+                self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
+            # build tree, find move.
+            self.root.build_tree(1)
+            self.root = self.root.find_best_child()
+            return self.root.get_move()
 
-        return my_pos, self.dir_map["u"]
+
+
+        
+        
+       
+    
+   
+        
+        
+        
+            
+
+   
+
+
+
