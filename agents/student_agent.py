@@ -62,6 +62,7 @@ class StudentAgent(Agent):
             for child in self.root.children: 
                 if (self.compare(chess_board, child.chess_board)):
                     if (adv_pos == child.adv_pos and my_pos == child.my_pos):
+                        print("found")
                         self.root = child
                         self.root.parent = None
                         found = True

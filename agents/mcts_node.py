@@ -31,8 +31,8 @@ class MCTSNode:
         Recursively update result from child node to parent. 
         """
         def propogate_result(self, result):
-            self.win_count += result
-            self.times_visited += 1
+            self.win_count += result[0]
+            self.times_visited += result[1]
 
             if (self.parent != None):
                 self.parent.propogate_result(result)
@@ -301,7 +301,7 @@ class MCTSNode:
 
         # assumes this is root
         def build_tree(self, k):
-            if (k > 200): #todo: this is such a dumb way of doing this
+            if (k > 20): #todo: this is such a dumb way of doing this
                 return
 
             selected_node = self
@@ -314,8 +314,11 @@ class MCTSNode:
             selected_node.expand()
 
             for child in selected_node.children: # run simulation and propogate result
-                result = child.run_simulation()
-                child.propogate_result(result)
+                result = 0
+                sim_run=10
+                for _ in range(0,sim_run):
+                    result += child.run_simulation()
+                child.propogate_result((result, sim_run))
             
             self.build_tree(k+1)
 
