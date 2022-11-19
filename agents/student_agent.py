@@ -2,7 +2,6 @@
 from agents.agent import Agent
 from store import register_agent
 from agents.mcts_node import MCTSNode
-import numpy as np
 from copy import deepcopy
 
 @register_agent("student_agent")

@@ -1,4 +1,3 @@
-import numpy as np
 from copy import deepcopy
 import random
 import math 
@@ -277,7 +276,7 @@ class MCTSNode:
             # get random number of steps 
             new_move = deepcopy(turn_player)
 
-            steps = np.random.randint(0, self.max_step + 1)
+            steps = random.randint(0, self.max_step)
 
             dir = None
             
