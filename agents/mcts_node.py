@@ -104,7 +104,10 @@ class MCTSNode:
             moveStack = [] # keep track of moves not expanded
             positionsConsidered = [] # revisit list (avoid revisiting positions)
 
-            moveStack.append((deepcopy(self.my_pos[0]), deepcopy(self.my_pos[1]), 0)) # tuples in moveStack of the form (x, y), depth from start
+            if (self.my_turn):
+                moveStack.append((deepcopy(self.my_pos[0]), deepcopy(self.my_pos[1]), 0)) # tuples in moveStack of the form (x, y), depth from start
+            else:
+                moveStack.append((deepcopy(self.adv_pos[0]), deepcopy(self.adv_pos[1]), 0)) # tuples in moveStack of the form (x, y), depth from start
 
             while (moveStack): # while still moves to be considered
                 moveBeingConsidered = moveStack.pop()
@@ -122,12 +125,17 @@ class MCTSNode:
                         move = self.moves[self.dir_map[key]]
                         new_board[positionOfMoveBeingConsidered[0] + move[0], positionOfMoveBeingConsidered[1] + move[1], self.opposites[self.dir_map[key]]] = True
 
-                        child = MCTSNode(self, deepcopy(positionOfMoveBeingConsidered), deepcopy(self.adv_pos), self.max_step, new_board, (positionOfMoveBeingConsidered[0], positionOfMoveBeingConsidered[1], self.dir_map[key]), not self.my_turn ) # note flip my_pos, adv_pos, flip who's turn
-                        self.children.append(child) # add viable move to children
+                        if (self.my_turn):
+                            child = MCTSNode(self, deepcopy(positionOfMoveBeingConsidered), deepcopy(self.adv_pos), self.max_step, new_board, (positionOfMoveBeingConsidered[0], positionOfMoveBeingConsidered[1], self.dir_map[key]), not self.my_turn ) # note flip my_pos, adv_pos, flip who's turn
+                            self.children.append(child) # add viable move to children
+                        else:
+                            child = MCTSNode(self, self.my_pos, deepcopy(positionOfMoveBeingConsidered), self.max_step, new_board, (positionOfMoveBeingConsidered[0], positionOfMoveBeingConsidered[1], self.dir_map[key]), not self.my_turn ) # note flip my_pos, adv_pos, flip who's turn
+                            self.children.append(child) # add viable move to children
                         
                 if (moveBeingConsidered[2] < self.max_step): # expand this move further if not at max moves 
                     for key in self.dir_map: # iterate over directions that could move from this cell. 
-                        if (self.canMoveInDirection(self.chess_board, positionOfMoveBeingConsidered, self.adv_pos, key)): # Add to move stack all possible moves that have not been expanded yet
+                        opponent = self.adv_pos if self.my_turn else self.my_pos
+                        if (self.canMoveInDirection(self.chess_board, positionOfMoveBeingConsidered, opponent, key)): # Add to move stack all possible moves that have not been expanded yet
                             # up
                             if self.dir_map[key] == 0 and (positionOfMoveBeingConsidered[0] - 1, positionOfMoveBeingConsidered[1]) not in positionsConsidered:
                                 moveStack.append((positionOfMoveBeingConsidered[0] - 1, positionOfMoveBeingConsidered[1], moveDepth + 1)) # add this move to the stack 
@@ -293,7 +301,7 @@ class MCTSNode:
 
         # assumes this is root
         def build_tree(self, k):
-            if (k > 100): #todo: this is such a dumb way of doing this
+            if (k > 200): #todo: this is such a dumb way of doing this
                 return
 
             selected_node = self
