@@ -14,7 +14,7 @@ class MCTSNode:
             self.adv_pos = adv_pos
             self.max_step = max_step
             self.my_turn = my_turn
-            self.the_move = move
+            self.move = move
             self.dir_map = {
             "u": 0,
             "r": 1,
@@ -37,28 +37,26 @@ class MCTSNode:
             if (self.parent != None):
                 self.parent.propogate_result(result)
             
+        """
+        Select a child of this node to pick to explore. 
+        """
         def select_child(self):
             best_child = None
             best_value = 0
             for child in self.children:
                 if (child.times_visited == 0): # If expanded node that hasn't yet been visited
                     return child
+                # select child differently depending on whos turn
+                if (self.my_turn):
+                    child_value = child.win_count / child.times_visited + (math.sqrt(2) * math.sqrt(math.log(self.times_visited) / child.times_visited))
+                else: 
+                    child_value = (child.times_visited - child.win_count) / child.times_visited + (math.sqrt(2) * math.sqrt(math.log(self.times_visited) / child.times_visited))
 
-                child_value = child.win_count / child.times_visited + (math.sqrt(2) * math.sqrt(math.log(self.times_visited) / child.times_visited))
-
+                # get best child
                 if (child_value >= best_value):
                     best_value = child_value
                     best_child = child
             return best_child
-
-        def set_barrier(self, board, r, c, dir):
-            # Set the barrier to True
-            board[r, c, dir] = True
-            # Set the opposite barrier to True
-            move = self.moves[dir]
-            board[r + move[0], c + move[1], self.opposites[dir]] = True
-
-            return board
 
         """
         Determine if can take one step from current position in the direction specified. 
@@ -125,16 +123,16 @@ class MCTSNode:
                         move = self.moves[self.dir_map[key]]
                         new_board[positionOfMoveBeingConsidered[0] + move[0], positionOfMoveBeingConsidered[1] + move[1], self.opposites[self.dir_map[key]]] = True
 
-                        if (self.my_turn):
+                        if (self.my_turn): # add different nodes depending on whos turn this node represents
                             child = MCTSNode(self, deepcopy(positionOfMoveBeingConsidered), deepcopy(self.adv_pos), self.max_step, new_board, (positionOfMoveBeingConsidered[0], positionOfMoveBeingConsidered[1], self.dir_map[key]), not self.my_turn ) # note flip my_pos, adv_pos, flip who's turn
                             self.children.append(child) # add viable move to children
                         else:
                             child = MCTSNode(self, self.my_pos, deepcopy(positionOfMoveBeingConsidered), self.max_step, new_board, (positionOfMoveBeingConsidered[0], positionOfMoveBeingConsidered[1], self.dir_map[key]), not self.my_turn ) # note flip my_pos, adv_pos, flip who's turn
-                            self.children.append(child) # add viable move to children
+                            self.children.append(child)
                         
                 if (moveBeingConsidered[2] < self.max_step): # expand this move further if not at max moves 
                     for key in self.dir_map: # iterate over directions that could move from this cell. 
-                        opponent = self.adv_pos if self.my_turn else self.my_pos
+                        opponent = self.adv_pos if self.my_turn else self.my_pos # determine who opponent is for this iteration
                         if (self.canMoveInDirection(self.chess_board, positionOfMoveBeingConsidered, opponent, key)): # Add to move stack all possible moves that have not been expanded yet
                             # up
                             if self.dir_map[key] == 0 and (positionOfMoveBeingConsidered[0] - 1, positionOfMoveBeingConsidered[1]) not in positionsConsidered:
@@ -204,11 +202,11 @@ class MCTSNode:
         Run a simulation given the current board state. 
         """
         def run_simulation(self):
-            self.times_visited += 1
             agents_turn = self.my_turn
             turn_player = None
             other_player = None
-            # determine who should make initial move in simulation
+
+            # determine who should make initial move in simulation based on whos turn it is
             if (self.my_turn): 
                 turn_player = deepcopy(self.my_pos)
                 other_player = deepcopy(self.adv_pos)
@@ -221,6 +219,7 @@ class MCTSNode:
             
             # Run simulation while game not over
             while (True):
+                # check if game finished
                 results = self.check_endgame(board, len(board), turn_player, other_player)
                 if (results[0]):
                     break
@@ -228,17 +227,19 @@ class MCTSNode:
                 # switch whos turn it is
                 turn_player = deepcopy(other_player)
                 other_player = (pos_x, pos_y)
+                agents_turn = not agents_turn
 
+                # place barrier
                 board[pos_x, pos_y, dir] = True
-                        # Set the opposite barrier to True
                 move = self.moves[dir]
                 board[pos_x + move[0], pos_y + move[1], self.opposites[dir]] = True
 
-                agents_turn = not agents_turn
+                
 
             # if game over, handle result
             f, p0_score, p1_score = self.check_endgame(board, len(board), turn_player, other_player)
 
+            # return score depeneding on whos turn was last played, and who winner was
             if (agents_turn):
                 if p0_score > p1_score:
                     return 1
@@ -254,6 +255,9 @@ class MCTSNode:
                 if p0_score < p1_score:
                     return 1
         
+        """
+        Determine if this player is stuck (cannot move in any direction)
+        """
         def stuck(self, board, turn_player, other_player):
             return (not self.canMoveInDirection(board, turn_player, other_player, "u") and not self.canMoveInDirection(board, turn_player, other_player, "d") 
             and not self.canMoveInDirection(board, turn_player, other_player, "l") and not self.canMoveInDirection(board, turn_player, other_player, "r"))
@@ -263,19 +267,21 @@ class MCTSNode:
         Make a random move in the simulation.
         """
         def make_random_move(self, board, turn_player, other_player):
-            # if stuck 
+            # if stuck (can't move, find where to put barrier)
             if (self.stuck(board, turn_player, other_player)):
                 dir = random.choice(["u", "d", "l", "r"])
                 while (not self.canPlaceBarrier(board, turn_player, dir)):
                     dir = random.choice(["u", "d", "l", "r"])
                 return turn_player[0], turn_player[1], self.dir_map[dir]
             
+            # get random number of steps 
             new_move = deepcopy(turn_player)
 
             steps = np.random.randint(0, self.max_step + 1)
 
             dir = None
             
+            # make random move while less than steps amount of move
             for _ in range(steps):
                 dir = random.choice(["u", "d", "l", "r"])
                 while (not self.canMoveInDirection(board, new_move, other_player, dir)):
@@ -293,6 +299,7 @@ class MCTSNode:
                 if (self.dir_map[dir] == 3):
                     new_move = (new_move[0], new_move[1] - 1)
             
+            # find random direction to place a barrier
             dir = random.choice(["u", "d", "l", "r"])
             while (not self.canPlaceBarrier(board, new_move, dir)):
                 dir = random.choice(["u", "d", "l", "r"])
@@ -306,24 +313,27 @@ class MCTSNode:
 
             selected_node = self
 
-            # select node to explore
+            # select nodes
             while (len(selected_node.children) != 0):
                 selected_node = selected_node.select_child()
 
-            # expand children
+            # expand children of leaf node that was selected
             selected_node.expand()
 
-            for child in selected_node.children: # run simulation and propogate result
+            # run simulation and propogate result
+            for child in selected_node.children: 
                 result = 0
-                sim_run=10
+                sim_run=15 # can play around with how many simulations done for this node here
                 for _ in range(0,sim_run):
-                    result += child.run_simulation()
-                child.propogate_result((result, sim_run))
+                    result += child.run_simulation() # run simulations sim_run amount of times
+                child.propogate_result((result, sim_run)) # propogate result back up to node
             
-            self.build_tree(k+1)
+            self.build_tree(k+1) # continue to build tree
 
-
-        def find_move(self):
+        """
+        Find the best child of this node.
+        """
+        def find_best_child(self):
             best_child = None
             best_value = 0
 
@@ -333,6 +343,12 @@ class MCTSNode:
                     best_value = c.win_count / c.times_visited
 
             return best_child
+
+        """
+        Return move of this node.
+        """
+        def get_move(self):
+            return (self.move[0], self.move[1]), self.move[2]
 
 
 
