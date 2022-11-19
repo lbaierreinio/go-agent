@@ -49,11 +49,31 @@ class StudentAgent(Agent):
 
         Please check the sample implementation in agents/random_agent.py or agents/human_agent.py for more details.
         """
-        # todo: use existing tree structure
-        self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
-        self.root.build_tree(1)
-        self.root = self.root.find_move()
-        return (self.root.the_move[0], self.root.the_move[1]), self.root.the_move[2]
+        # if no root instantiated yet 
+        if (self.root == None):
+            self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
+            self.root.build_tree(1)
+            self.root = self.root.find_best_child()
+            return self.root.get_move()
+        
+        # if root instantiated, use tree structure to find children representing new game state
+        else: 
+            found = False
+            for child in self.root.children: # get child that represents new game state
+                if (adv_pos == child.adv_pos and my_pos == child.my_pos and self.compare(chess_board, child.chess_board)):
+                    self.root = child
+                    self.root.parent = None
+                    found = True
+                    break
+            # if not found, create new root
+            if (not found):
+                self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
+            # build tree, find move.
+            self.root.build_tree(1)
+            self.root = self.root.find_best_child()
+            return self.root.get_move()
+
+
 
         
         
