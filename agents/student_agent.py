@@ -2,7 +2,7 @@
 from agents.agent import Agent
 from store import register_agent
 from agents.mcts_node import MCTSNode
-import sys
+import numpy as np
 from copy import deepcopy
 
 @register_agent("student_agent")
@@ -22,8 +22,17 @@ class StudentAgent(Agent):
             "d": 2,
             "l": 3,
         }
+        self.root = None
 
-    
+    def compare(self, board_one, board_two):
+        length = len(board_one)
+        for i in range(0,length):
+            for j in range(0,length):
+                for k in range(0,4):
+                    if (board_one[i][j][k] != board_two[i][j][k]):
+                        return False
+
+        return True
                 
     def step(self, chess_board, my_pos, adv_pos, max_step):
         """
@@ -40,10 +49,20 @@ class StudentAgent(Agent):
 
         Please check the sample implementation in agents/random_agent.py or agents/human_agent.py for more details.
         """
-        # dummy return
-        child = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
-        child.build_tree(1)
-        return child.find_move()
+        # todo: use existing tree structure
+        self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
+        self.root.build_tree(1)
+        self.root = self.root.find_move()
+        return (self.root.the_move[0], self.root.the_move[1]), self.root.the_move[2]
+
+        
+        
+       
+    
+   
+        
+        
+        
             
 
    

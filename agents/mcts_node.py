@@ -46,7 +46,7 @@ class MCTSNode:
 
                 child_value = child.win_count / child.times_visited + (math.sqrt(2) * math.sqrt(math.log(self.times_visited) / child.times_visited))
 
-                if (child_value > best_value):
+                if (child_value >= best_value):
                     best_value = child_value
                     best_child = child
             return best_child
@@ -271,7 +271,6 @@ class MCTSNode:
             for _ in range(steps):
                 dir = random.choice(["u", "d", "l", "r"])
                 while (not self.canMoveInDirection(board, new_move, other_player, dir)):
-                    print("hello")
                     dir = random.choice(["u", "d", "l", "r"])
                 # up    
                 if (self.dir_map[dir] == 0):
@@ -288,21 +287,25 @@ class MCTSNode:
             
             dir = random.choice(["u", "d", "l", "r"])
             while (not self.canPlaceBarrier(board, new_move, dir)):
-                print("hello")
                 dir = random.choice(["u", "d", "l", "r"])
                 
             return new_move[0], new_move[1], self.dir_map[dir]
 
         # assumes this is root
         def build_tree(self, k):
-            if (k > 3): #todo: this is such a dumb way of doing this
+            if (k > 100): #todo: this is such a dumb way of doing this
                 return
 
-            
-            # expand children
-            self.expand()
+            selected_node = self
 
-            for child in self.children: # run simulation and propogate result
+            # select node to explore
+            while (len(selected_node.children) != 0):
+                selected_node = selected_node.select_child()
+
+            # expand children
+            selected_node.expand()
+
+            for child in selected_node.children: # run simulation and propogate result
                 result = child.run_simulation()
                 child.propogate_result(result)
             
@@ -315,12 +318,10 @@ class MCTSNode:
 
             for c in self.children:
                 if c.win_count / c.times_visited >= best_value:
-                    print("best")
                     best_child = c
                     best_value = c.win_count / c.times_visited
 
-            
-            return (best_child.the_move[0], best_child.the_move[1]), best_child.the_move[2]
+            return best_child
 
 
 
