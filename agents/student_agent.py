@@ -42,14 +42,9 @@ class StudentAgent(Agent):
         """
         # dummy return
         child = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
-        child.run_simulation()
-        
+        child.build_tree(1)
+        return child.find_move()
             
-
-       
-
-        
-        return my_pos, self.dir_map["u"]
 
    
 

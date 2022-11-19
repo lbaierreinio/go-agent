@@ -68,12 +68,16 @@ class MCTSNode:
             if (not self.canPlaceBarrier(board, current_position, direction)): 
                 return False
             else:
+                # u
                 if (self.dir_map[direction] == 0):
                     return current_position[0] - 1 != adversary_position[0] or current_position[1] != adversary_position[1]
+                # r
                 if (self.dir_map[direction] == 1):
                     return current_position[0] != adversary_position[0] or current_position[1] + 1 != adversary_position[1]
+                # d
                 if (self.dir_map[direction] == 2):
                     return current_position[0] + 1 != adversary_position[0] or current_position[1] != adversary_position[1]
+                # l
                 if (self.dir_map[direction] == 3):
                     return current_position[0] != adversary_position[0] or current_position[1] - 1 != adversary_position[1]
 
@@ -91,7 +95,7 @@ class MCTSNode:
         Determine if this is a valid position or not. 
         """
         def validPosition(self, board, position):
-            return not (position[0] < 0 or position[1] < 0 or position[0] >= len(board) or position[1] >= len(board))
+            return (position[0] >= 0 and position[1] >= 0 and position[0] < len(board) and position[1] < len(board))
 
         """
         Get all children moves for this node. 
@@ -100,7 +104,7 @@ class MCTSNode:
             moveStack = [] # keep track of moves not expanded
             positionsConsidered = [] # revisit list (avoid revisiting positions)
 
-            moveStack.append((self.my_pos[0], self.my_pos[1], 0)) # tuples in moveStack of the form (x, y), depth from start
+            moveStack.append((deepcopy(self.my_pos[0]), deepcopy(self.my_pos[1]), 0)) # tuples in moveStack of the form (x, y), depth from start
 
             while (moveStack): # while still moves to be considered
                 moveBeingConsidered = moveStack.pop()
@@ -217,7 +221,11 @@ class MCTSNode:
                 turn_player = deepcopy(other_player)
                 other_player = (pos_x, pos_y)
 
-                self.set_barrier(board, pos_x, pos_y, dir)
+                board[pos_x, pos_y, dir] = True
+                        # Set the opposite barrier to True
+                move = self.moves[dir]
+                board[pos_x + move[0], pos_y + move[1], self.opposites[dir]] = True
+
                 agents_turn = not agents_turn
 
             # if game over, handle result
@@ -237,10 +245,22 @@ class MCTSNode:
                     return 0.5
                 if p0_score < p1_score:
                     return 1
+        
+        def stuck(self, board, turn_player, other_player):
+            return (not self.canMoveInDirection(board, turn_player, other_player, "u") and not self.canMoveInDirection(board, turn_player, other_player, "d") 
+            and not self.canMoveInDirection(board, turn_player, other_player, "l") and not self.canMoveInDirection(board, turn_player, other_player, "r"))
+                
+
         """
         Make a random move in the simulation.
         """
         def make_random_move(self, board, turn_player, other_player):
+            # if stuck 
+            if (self.stuck(board, turn_player, other_player)):
+                dir = random.choice(["u", "d", "l", "r"])
+                while (not self.canPlaceBarrier(board, turn_player, dir)):
+                    dir = random.choice(["u", "d", "l", "r"])
+                return turn_player[0], turn_player[1], self.dir_map[dir]
             
             new_move = deepcopy(turn_player)
 
@@ -251,10 +271,7 @@ class MCTSNode:
             for _ in range(steps):
                 dir = random.choice(["u", "d", "l", "r"])
                 while (not self.canMoveInDirection(board, new_move, other_player, dir)):
-                    print(board)
-                    print(turn_player)
-                    print(other_player)
-                    print("-")
+                    print("hello")
                     dir = random.choice(["u", "d", "l", "r"])
                 # up    
                 if (self.dir_map[dir] == 0):
@@ -271,17 +288,14 @@ class MCTSNode:
             
             dir = random.choice(["u", "d", "l", "r"])
             while (not self.canPlaceBarrier(board, new_move, dir)):
-                print(board)
-                print(turn_player)
-                print(other_player)
-                print("=")
+                print("hello")
                 dir = random.choice(["u", "d", "l", "r"])
                 
             return new_move[0], new_move[1], self.dir_map[dir]
 
         # assumes this is root
         def build_tree(self, k):
-            if (k > 2): #todo: this is such a dumb way of doing this
+            if (k > 3): #todo: this is such a dumb way of doing this
                 return
 
             
@@ -292,6 +306,7 @@ class MCTSNode:
                 result = child.run_simulation()
                 child.propogate_result(result)
             
+            self.build_tree(k+1)
 
 
         def find_move(self):
@@ -299,11 +314,13 @@ class MCTSNode:
             best_value = 0
 
             for c in self.children:
-                if c.win_count / c.times_visited > best_value:
+                if c.win_count / c.times_visited >= best_value:
+                    print("best")
                     best_child = c
                     best_value = c.win_count / c.times_visited
 
-            return best_child.the_move
+            
+            return (best_child.the_move[0], best_child.the_move[1]), best_child.the_move[2]
 
 
 
