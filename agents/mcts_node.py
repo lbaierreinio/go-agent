@@ -20,11 +20,15 @@ class MCTSNode:
             "d": 2,
             "l": 3,
             }
-
-             # Moves (Up, Right, Down, Left)
+            # Moves (Up, Right, Down, Left)
             self.moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
             # Opposite Directions
             self.opposites = {0: 2, 1: 3, 2: 0, 3: 1}
+            
+            # TODO: Can play with these values to determine what works best
+            self.selection_constant = math.sqrt(2)
+            self.depth = 10
+            self.simulations_per_expanded_child = 15
         
         """
         Recursively update result from child node to parent. 
@@ -47,9 +51,9 @@ class MCTSNode:
                     return child
                 # select child differently depending on whos turn
                 if (self.my_turn):
-                    child_value = child.win_count / child.times_visited + (math.sqrt(2) * math.sqrt(math.log(self.times_visited) / child.times_visited))
+                    child_value = child.win_count / child.times_visited + (self.selection_constant * math.sqrt(math.log(self.times_visited) / child.times_visited))
                 else: 
-                    child_value = (child.times_visited - child.win_count) / child.times_visited + (math.sqrt(2) * math.sqrt(math.log(self.times_visited) / child.times_visited))
+                    child_value = (child.times_visited - child.win_count) / child.times_visited + (self.selection_constant * math.sqrt(math.log(self.times_visited) / child.times_visited))
 
                 # get best child
                 if (child_value >= best_value):
@@ -307,7 +311,7 @@ class MCTSNode:
 
         # assumes this is root
         def build_tree(self, k):
-            if (k > 20): #todo: this is such a dumb way of doing this
+            if (k > self.depth): #todo: this is such a dumb way of doing this
                 return
 
             selected_node = self
@@ -322,10 +326,10 @@ class MCTSNode:
             # run simulation and propogate result
             for child in selected_node.children: 
                 result = 0
-                sim_run=15 # can play around with how many simulations done for this node here
-                for _ in range(0,sim_run):
+                 # can play around with how many simulations done for this node here
+                for _ in range(0,self.simulations_per_expanded_child):
                     result += child.run_simulation() # run simulations sim_run amount of times
-                child.propogate_result((result, sim_run)) # propogate result back up to node
+                child.propogate_result((result, self.simulations_per_expanded_child)) # propogate result back up to node
             
             self.build_tree(k+1) # continue to build tree
 
