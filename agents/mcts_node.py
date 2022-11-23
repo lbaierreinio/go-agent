@@ -1,13 +1,22 @@
 from copy import deepcopy
 import random
 import math 
+import time 
 
 class MCTSNode: 
-        def __init__(self, parent, my_pos, adv_pos, max_step, chess_board, move, my_turn):
+        def __init__(self, parent, my_pos, adv_pos, max_step, chess_board, move, my_turn, depth = 1):
             self.parent = parent
             self.chess_board = chess_board
             self.times_visited = 0
             self.win_count = 0
+            self.depth = depth
+
+            # Trying to implement a sorta simulated annealing with the c constant
+            self.c_constant = (math.e**(1/self.depth))-1 # constant for UCT formul
+
+            self.this_time = time.time()
+
+            self.time_limit = 1.9 # seconds
             self.children = []
             self.my_pos = my_pos
             self.adv_pos = adv_pos
@@ -51,9 +60,9 @@ class MCTSNode:
                     return child
                 # select child differently depending on whos turn
                 if (self.my_turn):
-                    child_value = child.win_count / child.times_visited + (self.selection_constant * math.sqrt(math.log(self.times_visited) / child.times_visited))
+                    child_value = child.win_count / child.times_visited + (self.c_constant * math.sqrt(math.log(self.times_visited) / child.times_visited))
                 else: 
-                    child_value = (child.times_visited - child.win_count) / child.times_visited + (self.selection_constant * math.sqrt(math.log(self.times_visited) / child.times_visited))
+                    child_value = (child.times_visited - child.win_count) / child.times_visited + (self.c_constant * math.sqrt(math.log(self.times_visited) / child.times_visited))
 
                 # get best child
                 if (child_value >= best_value):
@@ -110,7 +119,8 @@ class MCTSNode:
             else:
                 moveStack.append((deepcopy(self.adv_pos[0]), deepcopy(self.adv_pos[1]), 0)) # tuples in moveStack of the form (x, y), depth from start
 
-            while (moveStack): # while still moves to be considered
+            # Add timeout here 
+            while (time.time() - self.this_time < self.time_limit and moveStack): # while still moves to be considered
                 moveBeingConsidered = moveStack.pop()
                 positionOfMoveBeingConsidered = (moveBeingConsidered[0], moveBeingConsidered[1])
                 moveDepth = moveBeingConsidered[2]
@@ -127,11 +137,14 @@ class MCTSNode:
                         new_board[positionOfMoveBeingConsidered[0] + move[0], positionOfMoveBeingConsidered[1] + move[1], self.opposites[self.dir_map[key]]] = True
 
                         if (self.my_turn): # add different nodes depending on whos turn this node represents
-                            child = MCTSNode(self, deepcopy(positionOfMoveBeingConsidered), deepcopy(self.adv_pos), self.max_step, new_board, (positionOfMoveBeingConsidered[0], positionOfMoveBeingConsidered[1], self.dir_map[key]), not self.my_turn ) # note flip my_pos, adv_pos, flip who's turn
+            
+                            child = MCTSNode(self, deepcopy(positionOfMoveBeingConsidered), deepcopy(self.adv_pos), self.max_step, new_board, (positionOfMoveBeingConsidered[0], positionOfMoveBeingConsidered[1], self.dir_map[key]), not self.my_turn, self.depth+1) # note flip my_pos, adv_pos, flip who's turn
+                            child.this_time = self.this_time
                             self.children.append(child) # add viable move to children
                         else:
-                            child = MCTSNode(self, self.my_pos, deepcopy(positionOfMoveBeingConsidered), self.max_step, new_board, (positionOfMoveBeingConsidered[0], positionOfMoveBeingConsidered[1], self.dir_map[key]), not self.my_turn ) # note flip my_pos, adv_pos, flip who's turn
-                            self.children.append(child)
+                            child = MCTSNode(self, self.my_pos, deepcopy(positionOfMoveBeingConsidered), self.max_step, new_board, (positionOfMoveBeingConsidered[0], positionOfMoveBeingConsidered[1], self.dir_map[key]), not self.my_turn, self.depth+1 ) # note flip my_pos, adv_pos, flip who's turn
+                            child.this_time = self.this_time
+                            self.children.append(child) 
                         
                 if (moveBeingConsidered[2] < self.max_step): # expand this move further if not at max moves 
                     for key in self.dir_map: # iterate over directions that could move from this cell. 
@@ -221,7 +234,9 @@ class MCTSNode:
 
             
             # Run simulation while game not over
-            while (True):
+            # Time out here 
+
+            while (time.time() - self.this_time < self.time_limit): # time out after 0.1 seconds
                 # check if game finished
                 results = self.check_endgame(board, len(board), turn_player, other_player)
                 if (results[0]):
@@ -311,7 +326,9 @@ class MCTSNode:
 
         # assumes this is root
         def build_tree(self, k):
-            if (k > self.depth): #todo: this is such a dumb way of doing this
+        
+            
+            if (k > 10): #Tree depth 
                 return
 
             selected_node = self
@@ -326,8 +343,8 @@ class MCTSNode:
             # run simulation and propogate result
             for child in selected_node.children: 
                 result = 0
-                 # can play around with how many simulations done for this node here
-                for _ in range(0,self.simulations_per_expanded_child):
+                sim_run= 15 # can play around with how many simulations done for this node here
+                for _ in range(0,sim_run):
                     result += child.run_simulation() # run simulations sim_run amount of times
                 child.propogate_result((result, self.simulations_per_expanded_child)) # propogate result back up to node
             
@@ -337,9 +354,10 @@ class MCTSNode:
         Find the best child of this node.
         """
         def find_best_child(self):
+            
             best_child = None
             best_value = 0
-
+            
             for c in self.children:
                 if c.win_count / c.times_visited >= best_value:
                     best_child = c
