@@ -3,6 +3,7 @@ from agents.agent import Agent
 from store import register_agent
 from agents.mcts_node import MCTSNode
 from copy import deepcopy
+import time 
 
 @register_agent("student_agent")
 class StudentAgent(Agent):
@@ -10,7 +11,6 @@ class StudentAgent(Agent):
     A dummy class for your implementation. Feel free to use this class to
     add any helper functionalities needed for your agent.
     """
-
 
     def __init__(self):
         super(StudentAgent, self).__init__()
@@ -22,6 +22,7 @@ class StudentAgent(Agent):
             "l": 3,
         }
         self.root = None
+        # self.MCT; # Monte Carlo Tree
 
     def compare(self, board_one, board_two):
         length = len(board_one)
@@ -49,6 +50,7 @@ class StudentAgent(Agent):
         Please check the sample implementation in agents/random_agent.py or agents/human_agent.py for more details.
         """
         # if no root instantiated yet 
+
         if (self.root == None):
             self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
             self.root.build_tree(1)
@@ -62,11 +64,14 @@ class StudentAgent(Agent):
                 if (adv_pos == child.adv_pos and my_pos == child.my_pos and self.compare(chess_board, child.chess_board)):
                     self.root = child
                     self.root.parent = None
+                    self.root.this_time = time.time() # reset time
                     found = True
                     break
             # if not found, create new root
             if (not found):
                 self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
+                self.root.this_time = time.time() 
+                
             # build tree, find move.
             self.root.build_tree(1)
             self.root = self.root.find_best_child()
