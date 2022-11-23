@@ -60,17 +60,18 @@ class StudentAgent(Agent):
         # if root instantiated, use tree structure to find children representing new game state
         else: 
             found = False
+            curTime = time.time()
             for child in self.root.children: # get child that represents new game state
                 if (adv_pos == child.adv_pos and my_pos == child.my_pos and self.compare(chess_board, child.chess_board)):
                     self.root = child
                     self.root.parent = None
-                    self.root.this_time = time.time() # reset time
+                    self.root.this_time = curTime # reset time
                     found = True
                     break
             # if not found, create new root
             if (not found):
                 self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
-                self.root.this_time = time.time() 
+                self.root.this_time = curTime
                 
             # build tree, find move.
             self.root.build_tree(1)
