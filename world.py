@@ -26,6 +26,7 @@ class World:
         display_save=False,
         display_save_path=None,
         autoplay=False,
+        player_1_sim_value = 3
     ):
         """
         Initialize the game world
@@ -67,6 +68,7 @@ class World:
         p1_agent = AGENT_REGISTRY[player_2]
         logger.info(f"Registering p0 agent : {player_1}")
         self.p0 = p0_agent()
+        self.p0.simulations_per_expanded_child = player_1_sim_value
         logger.info(f"Registering p1 agent : {player_2}")
         self.p1 = p1_agent()
 

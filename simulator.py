@@ -4,6 +4,9 @@ from utils import all_logging_disabled
 import logging
 from tqdm import tqdm
 import numpy as np
+import pandas as pd
+
+# need to do pip install pandas openpyxl
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
 
@@ -18,13 +21,13 @@ def get_args():
     parser.add_argument(
         "--board_size_min",
         type=int,
-        default=6,
+        default=7,
         help="In autoplay mode, the minimum board size",
     )
     parser.add_argument(
         "--board_size_max",
         type=int,
-        default=12,
+        default=9,
         help="In autoplay mode, the maximum board size",
     )
     parser.add_argument("--display", action="store_true", default=False)
@@ -33,6 +36,7 @@ def get_args():
     parser.add_argument("--display_save_path", type=str, default="plots/")
     parser.add_argument("--autoplay", action="store_true", default=False)
     parser.add_argument("--autoplay_runs", type=int, default=1000)
+    parser.add_argument("--simulations_per_expanded_child", type=int, default=1)
     args = parser.parse_args()
     return args
 
@@ -48,6 +52,7 @@ class Simulator:
 
     def __init__(self, args):
         self.args = args
+        self.df = pd.read_excel('output_data.xlsx')
 
     def reset(self, swap_players=False, board_size=None):
         """
@@ -75,6 +80,7 @@ class Simulator:
             display_save=self.args.display_save,
             display_save_path=self.args.display_save_path,
             autoplay=self.args.autoplay,
+            player_1_sim_value=self.args.simulations_per_expanded_child
         )
         if self.world.initial_end:
             logger.warning("Initialization failed! Reset the world again!")
@@ -131,7 +137,11 @@ class Simulator:
         logger.info(
             f"Player {PLAYER_2_NAME} win percentage: {p2_win_count / self.args.autoplay_runs}, ({np.round(np.mean(p2_times), 5)} seconds/game)"
         )
-
+        p1_win_pct = p1_win_count / self.args.autoplay_runs
+        p2_win_pct = p2_win_count / self.args.autoplay_runs
+        data = np.array([self.args.simulations_per_expanded_child, self.world.board_size, p1_win_pct, p2_win_pct]) 
+        self.df.loc[len(self.df)] = data
+        self.df.to_excel('output_data.xlsx', index=False)
 
 if __name__ == "__main__":
     args = get_args()
