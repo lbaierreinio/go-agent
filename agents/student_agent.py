@@ -22,7 +22,7 @@ class StudentAgent(Agent):
             "l": 3,
         }
         self.root = None
-        # self.MCT; # Monte Carlo Tree
+        self.autoplay = True
 
     def compare(self, board_one, board_two):
         length = len(board_one)
@@ -53,7 +53,7 @@ class StudentAgent(Agent):
 
         if (self.root == None):
             self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
-            self.root.build_tree(1)
+            self.root.build_tree()
             self.root = self.root.find_best_child()
             return self.root.get_move()
         
@@ -74,7 +74,7 @@ class StudentAgent(Agent):
                 self.root.this_time = curTime
                 
             # build tree, find move.
-            self.root.build_tree(1)
+            self.root.build_tree()
             self.root = self.root.find_best_child()
             return self.root.get_move()
 

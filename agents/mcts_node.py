@@ -13,10 +13,8 @@ class MCTSNode:
 
             # Trying to implement a sorta simulated annealing with the c constant
             self.c_constant = (math.e**(1/self.depth))-1 # constant for UCT formul
-
             self.this_time = time.time()
-
-            self.time_limit = 1.9 # seconds
+            self.time_limit = 1.95 # seconds
             self.children = []
             self.my_pos = my_pos
             self.adv_pos = adv_pos
@@ -35,9 +33,7 @@ class MCTSNode:
             self.opposites = {0: 2, 1: 3, 2: 0, 3: 1}
             
             # TODO: Can play with these values to determine what works best
-            self.selection_constant = math.sqrt(2)
-            self.depth = 10
-            self.simulations_per_expanded_child = 15
+            self.simulations_per_expanded_child = 3
         
         """
         Recursively update result from child node to parent. 
@@ -56,6 +52,7 @@ class MCTSNode:
             best_child = None
             best_value = 0
             for child in self.children:
+                child.this_time = self.this_time # reset time as selecting children
                 if (child.times_visited == 0): # If expanded node that hasn't yet been visited
                     return child
                 # select child differently depending on whos turn
@@ -236,7 +233,9 @@ class MCTSNode:
             # Run simulation while game not over
             # Time out here 
 
-            while (time.time() - self.this_time < self.time_limit): # time out after 0.1 seconds
+            while (True): # time out after 0.1 seconds
+                if (time.time() - self.this_time >= self.time_limit): # surpassed time
+                    return None
                 # check if game finished
                 results = self.check_endgame(board, len(board), turn_player, other_player)
                 if (results[0]):
@@ -324,31 +323,29 @@ class MCTSNode:
                 
             return new_move[0], new_move[1], self.dir_map[dir]
 
-        # assumes this is root
-        def build_tree(self, k):
-        
+        """
+        Build the tree using selection, expansion, simulation, and back propogation.
+        """
+        def build_tree(self):
+            while (time.time() - self.this_time < self.time_limit): #Tree depth 
+                selected_node = self
+
+                # select nodes
+                while (len(selected_node.children) != 0):
+                    selected_node = selected_node.select_child()
+
+                # expand children of leaf node that was selected
+                selected_node.expand()
+
+                # run simulation and propogate result
+                for child in selected_node.children: 
+                    result = 0
+                    for _ in range(0,self.simulations_per_expanded_child):
+                        outcome = child.run_simulation()
+                        if (outcome is not None):
+                            result += outcome # run simulations sim_run amount of times
+                    child.propogate_result((result, self.simulations_per_expanded_child)) # propogate result back up to node
             
-            if (k > 10): #Tree depth 
-                return
-
-            selected_node = self
-
-            # select nodes
-            while (len(selected_node.children) != 0):
-                selected_node = selected_node.select_child()
-
-            # expand children of leaf node that was selected
-            selected_node.expand()
-
-            # run simulation and propogate result
-            for child in selected_node.children: 
-                result = 0
-                sim_run= 15 # can play around with how many simulations done for this node here
-                for _ in range(0,sim_run):
-                    result += child.run_simulation() # run simulations sim_run amount of times
-                child.propogate_result((result, self.simulations_per_expanded_child)) # propogate result back up to node
-            
-            self.build_tree(k+1) # continue to build tree
 
         """
         Find the best child of this node.

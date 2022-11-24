@@ -80,7 +80,7 @@ class Simulator:
             logger.warning("Initialization failed! Reset the world again!")
             self.reset()
 
-    def run(self, swap_players=False, board_size=6):
+    def run(self, swap_players=False, board_size=None):
         self.reset(swap_players=swap_players, board_size=board_size)
         is_end, p0_score, p1_score = self.world.step()
         while not is_end:
