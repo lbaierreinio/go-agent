@@ -1,8 +1,9 @@
 # Student agent: Add your own agent here
 from agents.agent import Agent
 from store import register_agent
-import sys
-
+from agents.mcts_node import MCTSNode
+from copy import deepcopy
+import time 
 
 @register_agent("student_agent")
 class StudentAgent(Agent):
@@ -20,7 +21,19 @@ class StudentAgent(Agent):
             "d": 2,
             "l": 3,
         }
+        self.root = None
+        self.autoplay = True
 
+    def compare(self, board_one, board_two):
+        length = len(board_one)
+        for i in range(0,length):
+            for j in range(0,length):
+                for k in range(0,4):
+                    if (board_one[i][j][k] != board_two[i][j][k]):
+                        return False
+
+        return True
+                
     def step(self, chess_board, my_pos, adv_pos, max_step):
         """
         Implement the step function of your agent here.
@@ -36,5 +49,48 @@ class StudentAgent(Agent):
 
         Please check the sample implementation in agents/random_agent.py or agents/human_agent.py for more details.
         """
-        # dummy return
-        return my_pos, self.dir_map["u"]
+        # if no root instantiated yet 
+
+        if (self.root == None):
+            self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
+            self.root.build_tree()
+            self.root = self.root.find_best_child()
+            return self.root.get_move()
+        
+        # if root instantiated, use tree structure to find children representing new game state
+        else: 
+            found = False
+            curTime = time.time()
+            for child in self.root.children: # get child that represents new game state
+                if (adv_pos == child.adv_pos and my_pos == child.my_pos and self.compare(chess_board, child.chess_board)):
+                    self.root = child
+                    self.root.parent = None
+                    self.root.this_time = curTime # reset time
+                    found = True
+                    break
+            # if not found, create new root
+            if (not found):
+                self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
+                self.root.this_time = curTime
+                
+            # build tree, find move.
+            self.root.build_tree()
+            self.root = self.root.find_best_child()
+            return self.root.get_move()
+
+
+
+        
+        
+       
+    
+   
+        
+        
+        
+            
+
+   
+
+
+
