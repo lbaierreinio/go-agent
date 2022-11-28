@@ -2,6 +2,7 @@
 from agents.agent import Agent
 from store import register_agent
 from copy import deepcopy
+from collections import deque
 import time 
 import random
 import math 
@@ -191,8 +192,8 @@ class MCTSNode:
         Get all children moves for this node. 
         """
         def expand(self):
-            moveStack = [] # keep track of moves not expanded
-            positionsConsidered = [] # revisit list (avoid revisiting positions)
+            moveStack = deque() # keep track of moves not expanded
+            positionsConsidered = deque() # revisit list (avoid revisiting positions)
 
             if (self.my_turn):
                 moveStack.append((deepcopy(self.my_pos[0]), deepcopy(self.my_pos[1]), 0)) # tuples in moveStack of the form (x, y), depth from start
