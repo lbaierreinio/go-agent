@@ -56,7 +56,7 @@ class StudentAgent(Agent):
 
         if (self.root == None):
             self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
-            self.root.time_limit = 29.9  # first node has 29.9 seconds to run
+            self.root.time_limit = 1.95  # first node has 29.9 seconds to run
             self.root.build_tree()
             self.root = self.root.find_best_child()
             self.root.time_limit = 1.95  # reset to 2 second limit for root and all its children 
