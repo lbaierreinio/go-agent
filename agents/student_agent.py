@@ -56,12 +56,12 @@ class StudentAgent(Agent):
 
         if (self.root == None):
             self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
-            self.root.time_limit = 1.95  # first node has 29.9 seconds to run
+            self.root.time_limit = 1.98  
             self.root.build_tree()
             self.root = self.root.find_best_child()
-            self.root.time_limit = 1.95  # reset to 2 second limit for root and all its children 
+            self.root.time_limit = 1.98 # reset to 2 second limit for root and all its children 
             for child in self.root.children:
-                child.time_limit = 1.95
+                child.time_limit = 1.98
             return self.root.get_move()
         
         
@@ -98,7 +98,7 @@ class MCTSNode:
             # Trying to implement a sorta simulated annealing with the c constant
             self.c_constant = (math.e**(1/self.depth))-1 # constant for UCT formula
             self.this_time = time.time()
-            self.time_limit = 1.95 # seconds
+            self.time_limit = 1.98 # seconds
             self.children = []
             self.my_pos = my_pos
             self.adv_pos = adv_pos
@@ -116,8 +116,7 @@ class MCTSNode:
             # Opposite Directions
             self.opposites = {0: 2, 1: 3, 2: 0, 3: 1}
             
-            # TODO: Can play with these values to determine what works best
-            self.simulations_per_expanded_child = 3
+            self.simulations_per_expanded_child = 11
         
         """
         Recursively update result from child node to parent. 
