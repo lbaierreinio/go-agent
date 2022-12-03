@@ -247,7 +247,7 @@ class MCTSNode:
         def check_endgame(self, board, board_size, player_1, player_2):
             """
             Check if the game ends and compute the current score of the agents.
-
+            Note this function was taken from world.py
             Returns
             -------
             is_endgame : bool
@@ -364,7 +364,7 @@ class MCTSNode:
                 
 
         """
-        Make a random move in the simulation.
+        Make a random move in the simulation, note this logic is partially taken from world.py
         """
         def make_random_move(self, board, turn_player, other_player):
             # if stuck (can't move, find where to put barrier)
