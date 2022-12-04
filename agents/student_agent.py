@@ -53,7 +53,6 @@ class StudentAgent(Agent):
         Please check the sample implementation in agents/random_agent.py or agents/human_agent.py for more details.
         """
         # if no root instantiated yet 
-
         if (self.root == None):
             self.root = MCTSNode(None, deepcopy(my_pos), deepcopy(adv_pos), max_step, deepcopy(chess_board), None, True)
             self.root.time_limit = 1.98  
@@ -369,9 +368,11 @@ class MCTSNode:
         def make_random_move(self, board, turn_player, other_player):
             # if stuck (can't move, find where to put barrier)
             if (self.stuck(board, turn_player, other_player)):
-                dir = random.choice(["u", "d", "l", "r"])
+                movelist = ["u", "d", "l", "r"]
+                dir = random.choice(movelist)
                 while (not self.canPlaceBarrier(board, turn_player, dir)):
-                    dir = random.choice(["u", "d", "l", "r"])
+                    movelist.remove(dir)
+                    dir = random.choice(movelist)
                 return turn_player[0], turn_player[1], self.dir_map[dir]
             
             # get random number of steps 
@@ -383,9 +384,11 @@ class MCTSNode:
             
             # make random move while less than steps amount of move
             for _ in range(steps):
-                dir = random.choice(["u", "d", "l", "r"])
+                movelist = ["u", "d", "l", "r"]
+                dir = random.choice(movelist)
                 while (not self.canMoveInDirection(board, new_move, other_player, dir)):
-                    dir = random.choice(["u", "d", "l", "r"])
+                    movelist.remove(dir)
+                    dir = random.choice(movelist)
                 # up    
                 if (self.dir_map[dir] == 0):
                     new_move = (new_move[0] - 1, new_move[1])
@@ -400,9 +403,11 @@ class MCTSNode:
                     new_move = (new_move[0], new_move[1] - 1)
             
             # find random direction to place a barrier
-            dir = random.choice(["u", "d", "l", "r"])
+            movelist = ["u", "d", "l", "r"]
+            dir = random.choice(movelist)
             while (not self.canPlaceBarrier(board, new_move, dir)):
-                dir = random.choice(["u", "d", "l", "r"])
+                movelist.remove(dir)
+                dir = random.choice(movelist)
                 
             return new_move[0], new_move[1], self.dir_map[dir]
 
@@ -420,7 +425,6 @@ class MCTSNode:
                 # expand children of leaf node that was selected
                 selected_node.expand()
 
-                # run simulation and propogate result
                 for child in selected_node.children: 
                     result = 0
                     for _ in range(0,self.simulations_per_expanded_child):
